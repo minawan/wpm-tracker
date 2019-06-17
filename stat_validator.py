@@ -16,9 +16,9 @@ DATE = 'date'
 WPM = 'wpm'
 HIGH = 'high'
 
-field_names = (ENTRY, DATE, WPM, HIGH)
+FIELD_NAMES = (ENTRY, DATE, WPM, HIGH)
 
-StatRecord = namedtuple('StatRecord', ' '.join(field_names))
+StatRecord = namedtuple('StatRecord', ' '.join(FIELD_NAMES))
 
 def generate_stat():
     high = 0
@@ -40,7 +40,7 @@ def check_high_wpm(row):
         raise RecordError('EX8', 'high is less than wpm')
 
 def get_validator():
-    validator = CSVValidator(field_names)
+    validator = CSVValidator(FIELD_NAMES)
 
     # basic header and record length checks
     validator.add_header_check('EX1', 'bad header')
