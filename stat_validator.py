@@ -25,10 +25,10 @@ def generate_stat():
     high = 0
     stat = dict()
     for entry, img_file in enumerate(sorted(glob.glob('*.png')), 1):
-        date = re.split('\.|_', img_file)[0]
+        date = re.split(r'\.|_', img_file)[0]
         img = cv2.imread(img_file)
         img_content = pytesseract.image_to_string(img)
-        wpm = int(re.search('(\d+) *WPM', img_content).group(1))
+        wpm = int(re.search(r'(\d+) *WPM', img_content).group(1))
         high = max(high, wpm)
         stat[entry] = StatRecord(entry, date, wpm, high)
     return stat
