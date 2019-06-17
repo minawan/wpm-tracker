@@ -6,6 +6,7 @@ import cv2
 import glob
 import pytesseract
 import re
+from collections import namedtuple
 from csvvalidator import CSVValidator
 from csvvalidator import RecordError
 from csvvalidator import datetime_string
@@ -18,27 +19,7 @@ HIGH = 'high'
 
 field_names = (ENTRY, DATE, WPM, HIGH)
 
-class StatRecord:
-  def __init__(self, entry, date, wpm, high):
-    self.entry = entry
-    self.date = date
-    self.wpm = wpm
-    self.high = high
-  @classmethod
-  def fromRow(cls, row):
-    entry = int(row[ENTRY])
-    date = row[DATE]
-    wpm = int(row[WPM])
-    high = int(row[HIGH])
-    return cls(entry, date, wpm, high)
-  def __repr__(self):
-    return ','.join(str(field) for field in (self.entry, self.date, self.wpm, self.high))
-  def __eq__(self, record):
-    if isinstance(record, StatRecord):
-      return self.entry == record.entry and self.date == record.date and self.wpm == record.wpm and self.high == record.high
-    return False
-  def __ne__(self, record):
-    return not self.__eq__(record)
+StatRecord = namedtuple('StatRecord', ' '.join(field_names))
 
 def generate_stat():
   print ','.join(field_names)
@@ -85,7 +66,7 @@ def validate_stat(validator, filename, output_stream):
     write_problems(problems, output_stream)
 
 def check_record(stat, row):
-  actual = StatRecord.fromRow(row)
+  actual = StatRecord(int(row[ENTRY]), row[DATE], int(row[WPM]), int(row[HIGH]))
   try:
     expected = stat[actual.entry]
     if actual != expected:
