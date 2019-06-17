@@ -22,7 +22,6 @@ field_names = (ENTRY, DATE, WPM, HIGH)
 StatRecord = namedtuple('StatRecord', ' '.join(field_names))
 
 def generate_stat():
-  print ','.join(field_names)
   high = 0
   stat = dict()
   for entry, img_file in enumerate(sorted(glob.glob('*.png')), 1):
