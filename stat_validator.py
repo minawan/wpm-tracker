@@ -65,7 +65,7 @@ def validate_stat(validator, filename, output_stream):
 def check_record(stat, row):
     actual = StatRecord(int(row[ENTRY]), row[DATE], int(row[WPM]), int(row[HIGH]))
     try:
-        expected = stat[actual.entry]
+        expected = stat[actual.entry]  # pylint: disable=no-member
         if actual != expected:
             raise RecordError('EX9', 'Row does not match the generated record.'
                               'Expected: {}, Actual: {}'.format(expected, actual))
