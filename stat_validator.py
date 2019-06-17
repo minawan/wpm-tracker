@@ -74,7 +74,6 @@ def check_record(stat, row):
     raise RecordError('EX10', 'Row not found among the generated records.')
 
 def main():
-  global stat
   stat = generate_stat()
   validator = get_validator()
   validator.add_record_check(lambda row: check_record(stat, row))
