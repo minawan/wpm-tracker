@@ -25,17 +25,19 @@ def generate_stat():
     stat = dict()
     for entry, img_file in enumerate(sorted(glob.glob('*.png')), 1):
         date = img_file.split('.')[0].split('_')[0]
-        img_content = pytesseract.image_to_string(cv2.imread(img_file)).split('\n')
-        wpm = int(''.join(ch for ch in next(line for line in img_content if line.find('WPM') != -1) if ch.isdigit()))
+        img = cv2.imread(img_file)
+        img_content = pytesseract.image_to_string(img).split('\n')
+        wpm_line = next(line for line in img_content if line.find('WPM') != -1)
+        wpm = int(''.join(ch for ch in wpm_line if ch.isdigit()))
         high = max(high, wpm)
         stat[entry] = StatRecord(entry, date, wpm, high)
     return stat
 
 def check_high_wpm(row):
-        high = int(row[HIGH])
-        wpm = int(row[WPM])
-        if high < wpm:
-                raise RecordError('EX8', 'high is less than wpm')
+    high = int(row[HIGH])
+    wpm = int(row[WPM])
+    if high < wpm:
+        raise RecordError('EX8', 'high is less than wpm')
 
 def get_validator():
     validator = CSVValidator(field_names)
@@ -45,14 +47,11 @@ def get_validator():
     validator.add_record_length_check('EX2', 'unexpected record length')
 
     # some simple value checks
-    validator.add_value_check(ENTRY, int,
-                                                        'EX3', 'entry must be an integer')
+    validator.add_value_check(ENTRY, int, 'EX3', 'entry must be an integer')
     validator.add_value_check(DATE, datetime_string('%Y-%m-%d'),
-                                                        'EX4', 'invalid date')
-    validator.add_value_check(WPM, int,
-                                                        'EX5', 'wpm must be an integer')
-    validator.add_value_check(HIGH, int,
-                                                        'EX6', 'high must be an integer')
+                              'EX4', 'invalid date')
+    validator.add_value_check(WPM, int, 'EX5', 'wpm must be an integer')
+    validator.add_value_check(HIGH, int, 'EX6', 'high must be an integer')
     validator.add_record_check(check_high_wpm)
     return validator
 
@@ -68,7 +67,8 @@ def check_record(stat, row):
     try:
         expected = stat[actual.entry]
         if actual != expected:
-            raise RecordError('EX9', 'Row does not match the generated record. Expected: {}, Actual: {}'.format(expected, actual))
+            raise RecordError('EX9', 'Row does not match the generated record.'
+                              'Expected: {}, Actual: {}'.format(expected, actual))
     except KeyError:
         raise RecordError('EX10', 'Row not found among the generated records.')
 
