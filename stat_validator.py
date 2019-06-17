@@ -4,6 +4,7 @@ import sys
 import csv
 import glob
 import re
+from functools import partial
 from collections import namedtuple
 from csvvalidator import CSVValidator
 from csvvalidator import RecordError
@@ -75,7 +76,7 @@ def check_record(stat, row):
 def main():
     stat = generate_stat()
     validator = get_validator()
-    validator.add_record_check(lambda row: check_record(stat, row))
+    validator.add_record_check(partial(check_record, stat))
     validate_stat(validator, sys.argv[1], sys.stdout)
 
 if __name__ == '__main__':
