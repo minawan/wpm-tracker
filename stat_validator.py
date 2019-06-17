@@ -2,15 +2,14 @@
 
 import sys
 import csv
-import cv2
 import glob
-import pytesseract
-import re
 from collections import namedtuple
 from csvvalidator import CSVValidator
 from csvvalidator import RecordError
 from csvvalidator import datetime_string
 from csvvalidator import write_problems
+import pytesseract
+import cv2
 
 ENTRY = 'entry'
 DATE = 'date'
@@ -25,7 +24,7 @@ def generate_stat():
     high = 0
     stat = dict()
     for entry, img_file in enumerate(sorted(glob.glob('*.png')), 1):
-        date = img_file.split('.')[0].split('_')[0] #re.split('._', img_file)
+        date = img_file.split('.')[0].split('_')[0]
         img_content = pytesseract.image_to_string(cv2.imread(img_file)).split('\n')
         wpm = int(''.join(ch for ch in next(line for line in img_content if line.find('WPM') != -1) if ch.isdigit()))
         high = max(high, wpm)
