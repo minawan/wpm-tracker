@@ -3,6 +3,7 @@
 import sys
 import csv
 import glob
+import re
 from collections import namedtuple
 from csvvalidator import CSVValidator
 from csvvalidator import RecordError
@@ -24,7 +25,7 @@ def generate_stat():
     high = 0
     stat = dict()
     for entry, img_file in enumerate(sorted(glob.glob('*.png')), 1):
-        date = img_file.split('.')[0].split('_')[0]
+        date = re.split('\.|_', img_file)[0]
         img = cv2.imread(img_file)
         img_content = pytesseract.image_to_string(img).split('\n')
         wpm_line = next(line for line in img_content if line.find('WPM') != -1)
