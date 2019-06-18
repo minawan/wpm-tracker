@@ -6,12 +6,17 @@ import glob
 import re
 from functools import partial
 from collections import namedtuple
+from absl import app
+from absl import flags
 from csvvalidator import CSVValidator
 from csvvalidator import RecordError
 from csvvalidator import datetime_string
 from csvvalidator import write_problems
 import pytesseract
 import cv2
+
+FLAGS = flags.FLAGS
+flags.DEFINE_string('stat_file', 'stat.txt', 'Stat file to validate')
 
 ENTRY = 'entry'
 DATE = 'date'
@@ -73,11 +78,11 @@ def check_record(stat, row):
     except KeyError:
         raise RecordError('EX10', 'Row not found among the generated records.')
 
-def main():
+def main(_):
     stat = generate_stat()
     validator = get_validator()
     validator.add_record_check(partial(check_record, stat))
-    validate_stat(validator, sys.argv[1], sys.stdout)
+    validate_stat(validator, FLAGS.stat_file, sys.stdout)
 
 if __name__ == '__main__':
-    main()
+    app.run(main)
