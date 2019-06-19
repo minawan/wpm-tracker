@@ -45,6 +45,18 @@ def check_high_wpm(row):
     if high < wpm:
         raise RecordError('EX8', 'high is less than wpm')
 
+def check_positive(row):
+    entry = int(row[ENTRY])
+    wpm = int(row[WPM])
+    high = int(row[HIGH])
+
+    if entry <= 0:
+        raise RecordError('EX9.1', 'entry is nonpositive')
+    if wpm <= 0:
+        raise RecordError('EX9.2', 'wpm is nonpositive')
+    if high <= 0:
+        raise RecordError('EX9.3', 'high is nonpositive')
+
 def get_validator():
     validator = CSVValidator(FIELD_NAMES)
 
@@ -59,6 +71,7 @@ def get_validator():
     validator.add_value_check(WPM, int, 'EX5', 'wpm must be an integer')
     validator.add_value_check(HIGH, int, 'EX6', 'high must be an integer')
     validator.add_record_check(check_high_wpm)
+    validator.add_record_check(check_positive)
     return validator
 
 def validate_stat(validator, filename, output_stream):
@@ -73,7 +86,7 @@ def check_record(stat, row):
     try:
         expected = stat[actual.entry]  # pylint: disable=no-member
         if actual != expected:
-            raise RecordError('EX9', 'Row does not match the generated record.'
+            raise RecordError('EX10', 'Row does not match the generated record.'
                               'Expected: {}, Actual: {}'.format(expected, actual))
     except KeyError:
         raise RecordError('EX10', 'Row not found among the generated records.')
