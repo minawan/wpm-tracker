@@ -24,7 +24,18 @@ DATE = 'date'
 WPM = 'wpm'
 HIGH = 'high'
 
+TABLE_NAME = 'stat'
 FIELD_NAMES = (ENTRY, DATE, WPM, HIGH)
+
+SQL_CREATE_TABLE = '''CREATE TABLE IF NOT EXISTS {} (
+                          {} integer PRIMARY KEY,
+                          {} text,
+                          {} integer,
+                          {} integer
+                      );'''.format(TABLE_NAME, *FIELD_NAMES)
+SQL_QUERY_TABLE_BY_ENTRY = 'SELECT * FROM {} WHERE entry=?'.format(TABLE_NAME)
+SQL_INSERT = '''INSERT INTO {}({}, {}, {}, {})
+                VALUES(?, ?, ?, ?)'''.format(TABLE_NAME, *FIELD_NAMES)
 
 StatRecord = namedtuple('StatRecord', ' '.join(FIELD_NAMES))
 
@@ -94,13 +105,12 @@ def check_record(stat, row):
 
 def populate_db(stat_db, stat):
     for _, record in stat.items():
-        stat_db.cursor().execute('''INSERT INTO stat(entry, date, wpm, high)
-                                    VALUES(?, ?, ?, ?)''', record)
+        stat_db.cursor().execute(SQL_INSERT, record)
 
 def check_record_db(stat_db, row):
     actual = StatRecord(int(row[ENTRY]), row[DATE], int(row[WPM]), int(row[HIGH]))
     cur = stat_db.cursor()
-    cur.execute('SELECT * FROM stat WHERE entry=?',
+    cur.execute(SQL_QUERY_TABLE_BY_ENTRY,
                 (actual.entry,))  # pylint: disable=no-member
     db_row = cur.fetchone()
     if not db_row:
@@ -115,12 +125,7 @@ def main(_):
     validator = get_validator()
     validator.add_record_check(partial(check_record, stat))
     with sqlite3.connect(':memory:') as stat_db:
-        stat_db.cursor().execute('''CREATE TABLE IF NOT EXISTS stat (
-                                        entry integer PRIMARY KEY,
-                                        date text,
-                                        wpm integer,
-                                        high integer
-                                    );''')
+        stat_db.cursor().execute(SQL_CREATE_TABLE)
         populate_db(stat_db, stat)
         validator.add_record_check(partial(check_record_db, stat_db))
         validate_stat(validator, FLAGS.stat_file, sys.stdout)
