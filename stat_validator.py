@@ -39,18 +39,6 @@ SQL_INSERT = '''INSERT INTO {}({}, {}, {}, {})
 
 StatRecord = namedtuple('StatRecord', ' '.join(FIELD_NAMES))
 
-def generate_stat():
-    high = 0
-    stat = dict()
-    for entry, img_file in enumerate(sorted(glob.glob('*.png')), 1):
-        date = re.split(r'\.|_', img_file)[0]
-        img = cv2.imread(img_file)
-        img_content = pytesseract.image_to_string(img)
-        wpm = int(re.search(r'(\d+) *WPM', img_content).group(1))
-        high = max(high, wpm)
-        stat[entry] = StatRecord(entry, date, wpm, high)
-    return stat
-
 def get_validator():
     validator = CSVValidator(FIELD_NAMES)
 
@@ -91,15 +79,22 @@ def check_record_db(stat_db, row):
 
 def main(_):
     validator = get_validator()
-    with sqlite3.connect(':memory:') as stat_db:
+    with open(FLAGS.stat_file, 'r') as input_csv_file, \
+         sqlite3.connect(':memory:') as stat_db:
         stat_db.cursor().execute(SQL_CREATE_TABLE)
-        for _, record in generate_stat().items():
+        high = 0
+        for entry, img_file in enumerate(sorted(glob.glob('*.png')), 1):
+            date = re.split(r'\.|_', img_file)[0]
+            img = cv2.imread(img_file)
+            img_content = pytesseract.image_to_string(img)
+            wpm = int(re.search(r'(\d+) *WPM', img_content).group(1))
+            high = max(high, wpm)
+            record = StatRecord(entry, date, wpm, high)
             stat_db.cursor().execute(SQL_INSERT, record)
         validator.add_record_check(partial(check_record_db, stat_db))
-    with open(FLAGS.stat_file, 'r') as input_csv_file:
         data = csv.reader(input_csv_file, delimiter=',')
         problems = validator.validate(data)
-    write_problems(problems, sys.stdout)
+        write_problems(problems, sys.stdout)
 
 if __name__ == '__main__':
     app.run(main)
