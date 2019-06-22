@@ -6,6 +6,7 @@ import glob
 import re
 from functools import partial
 from collections import namedtuple
+import sqlite3
 from absl import app
 from absl import flags
 from csvvalidator import CSVValidator
@@ -91,11 +92,38 @@ def check_record(stat, row):
     except KeyError:
         raise RecordError('EX10', 'Row not found among the generated records.')
 
+def populate_db(stat_db, stat):
+    for _, record in stat.items():
+        stat_db.cursor().execute('''INSERT INTO stat(entry, date, wpm, high)
+                                    VALUES(?, ?, ?, ?)''', record)
+
+def check_record_db(stat_db, row):
+    actual = StatRecord(int(row[ENTRY]), row[DATE], int(row[WPM]), int(row[HIGH]))
+    cur = stat_db.cursor()
+    cur.execute('SELECT * FROM stat WHERE entry=?',
+                (actual.entry,))  # pylint: disable=no-member
+    db_row = cur.fetchone()
+    if not db_row:
+        raise RecordError('EX11', 'Row not found among the generated records.')
+    expected = StatRecord(*db_row)
+    if actual != expected:
+        raise RecordError('EX11', 'Row does not match the generated record.'
+                          'Expected: {}, Actual: {}'.format(expected, actual))
+
 def main(_):
     stat = generate_stat()
     validator = get_validator()
     validator.add_record_check(partial(check_record, stat))
-    validate_stat(validator, FLAGS.stat_file, sys.stdout)
+    with sqlite3.connect(':memory:') as stat_db:
+        stat_db.cursor().execute('''CREATE TABLE IF NOT EXISTS stat (
+                                        entry integer PRIMARY KEY,
+                                        date text,
+                                        wpm integer,
+                                        high integer
+                                    );''')
+        populate_db(stat_db, stat)
+        validator.add_record_check(partial(check_record_db, stat_db))
+        validate_stat(validator, FLAGS.stat_file, sys.stdout)
 
 if __name__ == '__main__':
     app.run(main)
