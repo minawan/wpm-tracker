@@ -76,10 +76,6 @@ def get_validator():
                                    message='high is less than wpm')
     return validator
 
-def populate_db(stat_db, stat):
-    for _, record in stat.items():
-        stat_db.cursor().execute(SQL_INSERT, record)
-
 def check_record_db(stat_db, row):
     actual = StatRecord(int(row[ENTRY]), row[DATE], int(row[WPM]), int(row[HIGH]))
     cur = stat_db.cursor()
@@ -97,7 +93,8 @@ def main(_):
     validator = get_validator()
     with sqlite3.connect(':memory:') as stat_db:
         stat_db.cursor().execute(SQL_CREATE_TABLE)
-        populate_db(stat_db, generate_stat())
+        for _, record in generate_stat().items():
+            stat_db.cursor().execute(SQL_INSERT, record)
         validator.add_record_check(partial(check_record_db, stat_db))
     with open(FLAGS.stat_file, 'r') as input_csv_file:
         data = csv.reader(input_csv_file, delimiter=',')
