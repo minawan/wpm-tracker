@@ -83,16 +83,6 @@ def validate_stat(validator, filename, output_stream):
         problems = validator.validate(data)
         write_problems(problems, output_stream)
 
-def check_record(stat, row):
-    actual = StatRecord(int(row[ENTRY]), row[DATE], int(row[WPM]), int(row[HIGH]))
-    try:
-        expected = stat[actual.entry]  # pylint: disable=no-member
-        if actual != expected:
-            raise RecordError('EX10', 'Row does not match the generated record.'
-                              'Expected: {}, Actual: {}'.format(expected, actual))
-    except KeyError:
-        raise RecordError('EX10', 'Row not found among the generated records.')
-
 def populate_db(stat_db, stat):
     for _, record in stat.items():
         stat_db.cursor().execute(SQL_INSERT, record)
@@ -111,12 +101,10 @@ def check_record_db(stat_db, row):
                           'Expected: {}, Actual: {}'.format(expected, actual))
 
 def main(_):
-    stat = generate_stat()
     validator = get_validator()
-    validator.add_record_check(partial(check_record, stat))
     with sqlite3.connect(':memory:') as stat_db:
         stat_db.cursor().execute(SQL_CREATE_TABLE)
-        populate_db(stat_db, stat)
+        populate_db(stat_db, generate_stat())
         validator.add_record_check(partial(check_record_db, stat_db))
         validate_stat(validator, FLAGS.stat_file, sys.stdout)
 
