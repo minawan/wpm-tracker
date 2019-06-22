@@ -18,6 +18,7 @@ import cv2
 
 FLAGS = flags.FLAGS
 flags.DEFINE_string('stat_file', 'stat.txt', 'Stat file to validate')
+flags.DEFINE_string('db_file', ':memory:', 'Stat database file to load')
 
 ENTRY = 'entry'
 DATE = 'date'
@@ -64,12 +65,14 @@ def get_validator():
                                    message='high is less than wpm')
     return validator
 
+def get_record(stat_db, entry):
+    cur = stat_db.cursor()
+    cur.execute(SQL_QUERY_TABLE_BY_ENTRY, (entry,))
+    return cur.fetchone()
+
 def check_record_db(stat_db, row):
     actual = StatRecord(int(row[ENTRY]), row[DATE], int(row[WPM]), int(row[HIGH]))
-    cur = stat_db.cursor()
-    cur.execute(SQL_QUERY_TABLE_BY_ENTRY,
-                (actual.entry,))  # pylint: disable=no-member
-    db_row = cur.fetchone()
+    db_row = get_record(stat_db, actual.entry)  # pylint: disable=no-member
     if not db_row:
         raise RecordError('EX11', 'Row not found among the generated records.')
     expected = StatRecord(*db_row)
@@ -80,10 +83,12 @@ def check_record_db(stat_db, row):
 def main(_):
     validator = get_validator()
     with open(FLAGS.stat_file, 'r') as input_csv_file, \
-         sqlite3.connect(':memory:') as stat_db:
+         sqlite3.connect(FLAGS.db_file) as stat_db:
         stat_db.cursor().execute(SQL_CREATE_TABLE)
         high = 0
         for entry, img_file in enumerate(sorted(glob.glob('*.png')), 1):
+            if get_record(stat_db, entry):
+                continue
             date = re.split(r'\.|_', img_file)[0]
             img = cv2.imread(img_file)
             img_content = pytesseract.image_to_string(img)
