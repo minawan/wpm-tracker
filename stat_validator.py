@@ -76,13 +76,6 @@ def get_validator():
                                    message='high is less than wpm')
     return validator
 
-def validate_stat(validator, filename, output_stream):
-    # validate the data and write problems to stdout
-    with open(filename, 'r') as input_csv_file:
-        data = csv.reader(input_csv_file, delimiter=',')
-        problems = validator.validate(data)
-        write_problems(problems, output_stream)
-
 def populate_db(stat_db, stat):
     for _, record in stat.items():
         stat_db.cursor().execute(SQL_INSERT, record)
@@ -106,7 +99,10 @@ def main(_):
         stat_db.cursor().execute(SQL_CREATE_TABLE)
         populate_db(stat_db, generate_stat())
         validator.add_record_check(partial(check_record_db, stat_db))
-        validate_stat(validator, FLAGS.stat_file, sys.stdout)
+    with open(FLAGS.stat_file, 'r') as input_csv_file:
+        data = csv.reader(input_csv_file, delimiter=',')
+        problems = validator.validate(data)
+    write_problems(problems, sys.stdout)
 
 if __name__ == '__main__':
     app.run(main)
