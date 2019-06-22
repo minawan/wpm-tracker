@@ -51,24 +51,6 @@ def generate_stat():
         stat[entry] = StatRecord(entry, date, wpm, high)
     return stat
 
-def check_high_wpm(row):
-    high = int(row[HIGH])
-    wpm = int(row[WPM])
-    if high < wpm:
-        raise RecordError('EX8', 'high is less than wpm')
-
-def check_positive(row):
-    entry = int(row[ENTRY])
-    wpm = int(row[WPM])
-    high = int(row[HIGH])
-
-    if entry <= 0:
-        raise RecordError('EX9.1', 'entry is nonpositive')
-    if wpm <= 0:
-        raise RecordError('EX9.2', 'wpm is nonpositive')
-    if high <= 0:
-        raise RecordError('EX9.3', 'high is nonpositive')
-
 def get_validator():
     validator = CSVValidator(FIELD_NAMES)
 
@@ -77,13 +59,21 @@ def get_validator():
     validator.add_record_length_check('EX2', 'unexpected record length')
 
     # some simple value checks
+    check_positive = lambda n: int(n) > 0
     validator.add_value_check(ENTRY, int, 'EX3', 'entry must be an integer')
+    validator.add_value_predicate(ENTRY, check_positive, code='EX9.1',
+                                  message='entry is nonpositive')
     validator.add_value_check(DATE, datetime_string('%Y-%m-%d'),
                               'EX4', 'invalid date')
     validator.add_value_check(WPM, int, 'EX5', 'wpm must be an integer')
+    validator.add_value_predicate(WPM, check_positive, code='EX9.2',
+                                  message='wpm is nonpositive')
     validator.add_value_check(HIGH, int, 'EX6', 'high must be an integer')
-    validator.add_record_check(check_high_wpm)
-    validator.add_record_check(check_positive)
+    validator.add_value_predicate(HIGH, check_positive, code='EX9.3',
+                                  message='high is nonpositive')
+    check_high_wpm = lambda row: int(row[HIGH]) >= int(row[WPM])
+    validator.add_record_predicate(check_high_wpm, code='EX8',
+                                   message='high is less than wpm')
     return validator
 
 def validate_stat(validator, filename, output_stream):
