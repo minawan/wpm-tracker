@@ -20,25 +20,24 @@ FLAGS = flags.FLAGS
 flags.DEFINE_string('stat_file', 'stat.txt', 'Stat file to validate')
 flags.DEFINE_string('db_file', ':memory:', 'Stat database file to load')
 
-ENTRY = 'entry'
+ROWID = 'oid'
 DATE = 'date'
 WPM = 'wpm'
 HIGH = 'high'
 
 TABLE_NAME = 'stat'
-FIELD_NAMES = (ENTRY, DATE, WPM, HIGH)
+FIELD_NAMES = (ROWID, DATE, WPM, HIGH)
 
 SQL_CREATE_TABLE = '''CREATE TABLE IF NOT EXISTS {table} (
-    {entry} integer NOT NULL CHECK ({entry} > 0),
     {date} date NOT NULL CHECK ({date} IS strftime('%Y-%m-%d', {date})),
     {wpm} integer NOT NULL CHECK ({wpm} > 0),
     {high} integer NOT NULL CHECK ({high} > 0),
-    PRIMARY KEY ({entry}),
     CONSTRAINT check_running_max CHECK ({high} >= {wpm})
-);'''.format(table=TABLE_NAME, entry=ENTRY, date=DATE, wpm=WPM, high=HIGH)
-SQL_QUERY_TABLE_BY_ENTRY = 'SELECT * FROM {} WHERE entry=?'.format(TABLE_NAME)
-SQL_INSERT = '''INSERT INTO {}({}, {}, {}, {})
-                VALUES(?, ?, ?, ?)'''.format(TABLE_NAME, *FIELD_NAMES)
+);'''.format(table=TABLE_NAME, date=DATE, wpm=WPM, high=HIGH)
+SQL_QUERY_TABLE_BY_ROWID = 'SELECT {rowid}, * FROM {table} WHERE {rowid}=?'.format(
+    table=TABLE_NAME, rowid=ROWID)
+SQL_INSERT = '''INSERT INTO {table}({date}, {wpm}, {high})
+    VALUES(?, ?, ?)'''.format(table=TABLE_NAME, date=DATE, wpm=WPM, high=HIGH)
 
 StatRecord = namedtuple('StatRecord', ' '.join(FIELD_NAMES))
 
@@ -49,14 +48,14 @@ def get_validator():
     validator.add_record_length_check('EX2', 'unexpected record length')
     return validator
 
-def get_record(stat_db, entry):
+def get_record(stat_db, rowid):
     cur = stat_db.cursor()
-    cur.execute(SQL_QUERY_TABLE_BY_ENTRY, (entry,))
+    cur.execute(SQL_QUERY_TABLE_BY_ROWID, (rowid,))
     return cur.fetchone()
 
 def check_record_db(stat_db, row):
-    actual = StatRecord(int(row[ENTRY]), row[DATE], int(row[WPM]), int(row[HIGH]))
-    db_row = get_record(stat_db, actual.entry)  # pylint: disable=no-member
+    actual = StatRecord(int(row[ROWID]), row[DATE], int(row[WPM]), int(row[HIGH]))
+    db_row = get_record(stat_db, actual.oid)  # pylint: disable=no-member
     if not db_row:
         raise RecordError('EX3', 'Row not found among the generated records.')
     expected = StatRecord(*db_row)
@@ -70,16 +69,15 @@ def main(_):
          sqlite3.connect(FLAGS.db_file) as stat_db:
         stat_db.cursor().execute(SQL_CREATE_TABLE)
         high = 0
-        for entry, img_file in enumerate(sorted(glob.glob('*.png')), 1):
-            if get_record(stat_db, entry):
+        for rowid, img_file in enumerate(sorted(glob.glob('*.png')), 1):
+            if get_record(stat_db, rowid):
                 continue
             date = re.split(r'\.|_', img_file)[0]
             img = cv2.imread(img_file)
             img_content = pytesseract.image_to_string(img)
             wpm = int(re.search(r'(\d+) *WPM', img_content).group(1))
             high = max(high, wpm)
-            record = StatRecord(entry, date, wpm, high)
-            stat_db.cursor().execute(SQL_INSERT, record)
+            stat_db.cursor().execute(SQL_INSERT, (date, wpm, high))
         validator.add_record_check(partial(check_record_db, stat_db))
         data = csv.reader(input_csv_file, delimiter=',')
         problems = validator.validate(data)
