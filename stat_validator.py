@@ -51,21 +51,11 @@ def get_validator():
     validator.add_record_length_check('EX2', 'unexpected record length')
 
     # some simple value checks
-    check_positive = lambda n: int(n) > 0
     validator.add_value_check(ENTRY, int, 'EX3', 'entry must be an integer')
-    validator.add_value_predicate(ENTRY, check_positive, code='EX9.1',
-                                  message='entry is nonpositive')
     validator.add_value_check(DATE, datetime_string('%Y-%m-%d'),
                               'EX4', 'invalid date')
     validator.add_value_check(WPM, int, 'EX5', 'wpm must be an integer')
-    validator.add_value_predicate(WPM, check_positive, code='EX9.2',
-                                  message='wpm is nonpositive')
     validator.add_value_check(HIGH, int, 'EX6', 'high must be an integer')
-    validator.add_value_predicate(HIGH, check_positive, code='EX9.3',
-                                  message='high is nonpositive')
-    check_high_wpm = lambda row: int(row[HIGH]) >= int(row[WPM])
-    validator.add_record_predicate(check_high_wpm, code='EX8',
-                                   message='high is less than wpm')
     return validator
 
 def get_record(stat_db, entry):
@@ -77,10 +67,10 @@ def check_record_db(stat_db, row):
     actual = StatRecord(int(row[ENTRY]), row[DATE], int(row[WPM]), int(row[HIGH]))
     db_row = get_record(stat_db, actual.entry)  # pylint: disable=no-member
     if not db_row:
-        raise RecordError('EX11', 'Row not found among the generated records.')
+        raise RecordError('EX7', 'Row not found among the generated records.')
     expected = StatRecord(*db_row)
     if actual != expected:
-        raise RecordError('EX11', 'Row does not match the generated record.'
+        raise RecordError('EX8', 'Row does not match the generated record.'
                           'Expected: {}, Actual: {}'.format(expected, actual))
 
 def main(_):
