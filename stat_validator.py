@@ -30,7 +30,7 @@ FIELD_NAMES = (ENTRY, DATE, WPM, HIGH)
 
 SQL_CREATE_TABLE = '''CREATE TABLE IF NOT EXISTS {table} (
                           {entry} integer NOT NULL CHECK ({entry} > 0),
-                          {date} text NOT NULL,
+                          {date} date NOT NULL,
                           {wpm} integer NOT NULL CHECK ({wpm} > 0),
                           {high} integer NOT NULL CHECK ({high} > 0),
                           PRIMARY KEY ({entry}),
