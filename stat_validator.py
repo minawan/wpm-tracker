@@ -29,14 +29,13 @@ TABLE_NAME = 'stat'
 FIELD_NAMES = (ENTRY, DATE, WPM, HIGH)
 
 SQL_CREATE_TABLE = '''CREATE TABLE IF NOT EXISTS {table} (
-                          {entry} integer NOT NULL CHECK ({entry} > 0),
-                          {date} date NOT NULL,
-                          {wpm} integer NOT NULL CHECK ({wpm} > 0),
-                          {high} integer NOT NULL CHECK ({high} > 0),
-                          PRIMARY KEY ({entry}),
-                          CONSTRAINT check_running_max CHECK ({high} >= {wpm})
-                      );'''.format(table=TABLE_NAME, entry=ENTRY, date=DATE,
-                                   wpm=WPM, high=HIGH)
+    {entry} integer NOT NULL CHECK ({entry} > 0),
+    {date} date NOT NULL CHECK ({date} IS strftime('%Y-%m-%d', {date})),
+    {wpm} integer NOT NULL CHECK ({wpm} > 0),
+    {high} integer NOT NULL CHECK ({high} > 0),
+    PRIMARY KEY ({entry}),
+    CONSTRAINT check_running_max CHECK ({high} >= {wpm})
+);'''.format(table=TABLE_NAME, entry=ENTRY, date=DATE, wpm=WPM, high=HIGH)
 SQL_QUERY_TABLE_BY_ENTRY = 'SELECT * FROM {} WHERE entry=?'.format(TABLE_NAME)
 SQL_INSERT = '''INSERT INTO {}({}, {}, {}, {})
                 VALUES(?, ?, ?, ?)'''.format(TABLE_NAME, *FIELD_NAMES)
