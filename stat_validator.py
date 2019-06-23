@@ -55,7 +55,7 @@ def get_record(stat_db, rowid):
 
 def check_record_db(stat_db, row):
     actual = StatRecord(int(row[ROWID]), row[DATE], int(row[WPM]), int(row[HIGH]))
-    db_row = get_record(stat_db, actual.oid)  # pylint: disable=no-member
+    db_row = get_record(stat_db, getattr(actual, ROWID))
     if not db_row:
         raise RecordError('EX3', 'Row not found among the generated records.')
     expected = StatRecord(*db_row)
