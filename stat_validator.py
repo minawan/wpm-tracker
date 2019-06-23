@@ -44,17 +44,9 @@ StatRecord = namedtuple('StatRecord', ' '.join(FIELD_NAMES))
 
 def get_validator():
     validator = CSVValidator(FIELD_NAMES)
-
     # basic header and record length checks
     validator.add_header_check('EX1', 'bad header')
     validator.add_record_length_check('EX2', 'unexpected record length')
-
-    # some simple value checks
-    validator.add_value_check(ENTRY, int, 'EX3', 'entry must be an integer')
-    validator.add_value_check(DATE, datetime_string('%Y-%m-%d'),
-                              'EX4', 'invalid date')
-    validator.add_value_check(WPM, int, 'EX5', 'wpm must be an integer')
-    validator.add_value_check(HIGH, int, 'EX6', 'high must be an integer')
     return validator
 
 def get_record(stat_db, entry):
@@ -66,10 +58,10 @@ def check_record_db(stat_db, row):
     actual = StatRecord(int(row[ENTRY]), row[DATE], int(row[WPM]), int(row[HIGH]))
     db_row = get_record(stat_db, actual.entry)  # pylint: disable=no-member
     if not db_row:
-        raise RecordError('EX7', 'Row not found among the generated records.')
+        raise RecordError('EX3', 'Row not found among the generated records.')
     expected = StatRecord(*db_row)
     if actual != expected:
-        raise RecordError('EX8', 'Row does not match the generated record.'
+        raise RecordError('EX4', 'Row does not match the generated record.'
                           'Expected: {}, Actual: {}'.format(expected, actual))
 
 def main(_):
