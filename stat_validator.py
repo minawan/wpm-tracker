@@ -11,7 +11,6 @@ from absl import app
 from absl import flags
 from csvvalidator import CSVValidator
 from csvvalidator import RecordError
-from csvvalidator import datetime_string
 from csvvalidator import write_problems
 import pytesseract
 import cv2
