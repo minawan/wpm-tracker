@@ -24,6 +24,9 @@ dependencies:
 
 library:
   source-dirs: src
+  dependencies:
+  - HDBC >= 2.4 && < 3
+  - HDBC-sqlite3 >= 2.3 && < 3
 
 executables:
   wpm-tracker-exe:
