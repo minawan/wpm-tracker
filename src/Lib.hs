@@ -5,17 +5,27 @@ module Lib
 import Database.HDBC.Sqlite3 (connectSqlite3)
 import Database.HDBC
 
-convRow :: [SqlValue] -> String
-convRow [sqlRowId, sqlWpm] = show rowId ++ ": " ++ show wpm
+type RowId = Integer
+type Date = String
+type Wpm = Integer
+type High = Integer
+
+data StatEntry = StatEntry RowId Date Wpm High
+  deriving (Show)
+
+convRow :: [SqlValue] -> Maybe StatEntry
+convRow [sqlRowId, sqlDate, sqlWpm, sqlHigh] = Just $ StatEntry rowId date wpm high
   where rowId = (fromSql sqlRowId)::Integer
+        date = (fromSql sqlDate)::String
         wpm = (fromSql sqlWpm)::Integer
-convRow x = fail $ "Unexpected result: " ++ show x
+        high = (fromSql sqlHigh)::Integer
+convRow _ = Nothing
 
 readAllWpm :: String -> String -> IO ()
 readAllWpm _ dbFilename = do
   conn <- connectSqlite3 dbFilename
   r <- quickQuery' conn
-       "SELECT oid, wpm from stat ORDER BY oid" []
-  let stringRows = map convRow r
+       "SELECT oid, * from stat ORDER BY oid" []
+  let stringRows = map (show . convRow) r
   mapM_ putStrLn stringRows
   disconnect conn
