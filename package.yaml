@@ -25,9 +25,8 @@ dependencies:
 library:
   source-dirs: src
   dependencies:
-  - time >= 1.8 && < 2
   - HDBC >= 2.4 && < 3
-  - HDBC-sqlite3 >= 2.3 && < 3
+  - time >= 1.8 && < 2
 
 executables:
   wpm-tracker-exe:
@@ -38,6 +37,8 @@ executables:
     - -rtsopts
     - -with-rtsopts=-N
     dependencies:
+    - HDBC >= 2.4 && < 3
+    - HDBC-sqlite3 >= 2.3 && < 3
     - wpm-tracker
 
 tests:
