@@ -1,14 +1,13 @@
 module Main where
 
 import Control.Monad (when)
-import qualified Data.ByteString.Lazy.Char8 as BC
-import Data.Csv ( defaultEncodeOptions
-                , encUseCrLf
-                , encodeDefaultOrderedByNameWith
-                )
+import qualified Data.ByteString.Lazy as BL (readFile)
+import Data.Csv (decodeByName)
+import qualified Data.Vector as Vector (toList)
 import Database.HDBC.Sqlite3 (connectSqlite3)
-import Database.HDBC
-import System.Environment
+import Database.HDBC (disconnect, quickQuery')
+import System.Environment (getArgs)
+import Text.Printf (printf)
 
 import Lib
 
@@ -29,7 +28,11 @@ main = do
   when (null rows) $ putStrLn ("No stat records found in " ++ dbFilename)
   mapM_ putStrLn $ validateStatEntries rows 
 
-  let encodeOptions = defaultEncodeOptions { encUseCrLf = False }
-  BC.putStr $ encodeDefaultOrderedByNameWith encodeOptions rows
+  stat <- BL.readFile csvFilename
+  let records = case decodeByName stat of
+                      Left err -> fail err
+                      Right (_, records) -> Vector.toList records
+  mapM_ putStrLn $ validateStatEntries records
+  when (records /= rows) $ putStrLn "Stat table inconsistent with DB records."
 
   disconnect conn

@@ -42,6 +42,7 @@ instance ToField Day where
   toField day = toField $ show day
 
 data StatEntry = StatEntry RowId Date Wpm High
+  deriving (Eq, Show)
 
 instance FromNamedRecord StatEntry where
   parseNamedRecord entry = StatEntry <$> entry .: "oid"

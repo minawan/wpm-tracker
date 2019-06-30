@@ -44,6 +44,7 @@ executables:
     - HDBC-sqlite3 >= 2.3 && < 3
     - bytestring >= 0.10 && < 1
     - cassava >= 0.5 && < 1
+    - vector >= 0.12 && < 1
     - wpm-tracker
 
 tests:
