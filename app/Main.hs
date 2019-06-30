@@ -1,3 +1,5 @@
+{-# LANGUAGE DeriveDataTypeable #-}
+
 module Main where
 
 import Control.Monad (when)
@@ -6,7 +8,7 @@ import Data.Csv (decodeByName)
 import qualified Data.Vector as Vector (toList)
 import Database.HDBC.Sqlite3 (connectSqlite3)
 import Database.HDBC (disconnect, quickQuery')
-import System.Environment (getArgs)
+import System.Console.CmdArgs (Data, Typeable, cmdArgs, help, summary, (&=))
 import Text.Printf (printf)
 
 import Lib
@@ -14,11 +16,20 @@ import Lib
 selectRowsFromStatTable :: String
 selectRowsFromStatTable = "SELECT oid, * from stat ORDER BY oid"
 
+data Flag = Flag { stat_file :: String
+                 , db_file :: String
+                 }
+  deriving (Show, Data, Typeable)
+
+flag = Flag { stat_file = "stat.txt" &= help "Stat file to validate"
+            , db_file = "stat.sqlite3" &= help "Stat database file to load"
+            } &= summary "Stat Validator"
+
 main :: IO ()
 main = do
-  args <- getArgs
-  let csvFilename = args !! 0
-  let dbFilename = args !! 1
+  flags <- cmdArgs flag
+  let csvFilename = stat_file flags
+  let dbFilename = db_file flags
   conn <- connectSqlite3 dbFilename
   queryResult <- quickQuery' conn selectRowsFromStatTable []
 
