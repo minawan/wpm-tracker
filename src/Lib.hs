@@ -1,12 +1,14 @@
 module Lib
     ( StatEntry
     , readAllRows
+    , validateStatEntries 
     ) where
 
 import Data.List (intercalate)
 import Data.Time.Calendar (Day)
 import Data.Time.Format (defaultTimeLocale, parseTimeM)
 import Database.HDBC (SqlValue, fromSql)
+import Text.Printf (printf)
 
 type RowId = Integer
 type Date = Day
@@ -35,3 +37,11 @@ convRow _ = Nothing
 
 readAllRows :: [[SqlValue]] -> [Maybe StatEntry]
 readAllRows = map convRow
+
+validateStatEntries :: [StatEntry] -> [String]
+validateStatEntries [] = []
+validateStatEntries (StatEntry rowId _ wpm high : tl)
+  | wpm <= high = messages
+  | otherwise = msg : messages
+  where messages = validateStatEntries tl
+        msg = printf "Row %d: high=%d < wpm=%d" rowId high wpm

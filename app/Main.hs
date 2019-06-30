@@ -1,5 +1,6 @@
 module Main where
 
+import Control.Monad (when)
 import Database.HDBC.Sqlite3 (connectSqlite3)
 import Database.HDBC
 import System.Environment
@@ -20,5 +21,7 @@ main = do
   let rows = case sequence $ readAllRows queryResult of
                Just rows -> rows
                Nothing -> []
+  when (null rows) $ putStrLn ("No stat records found in " ++ dbFilename)
+  mapM_ putStrLn $ validateStatEntries rows 
   mapM_ (putStrLn . show) rows
   disconnect conn
