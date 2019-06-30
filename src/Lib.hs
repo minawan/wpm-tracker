@@ -55,6 +55,12 @@ checkHighGeWpm = checkPred1 p msgGen
         msgGen (StatEntry rowId _ wpm high) =
           printf "Row %d: high=%d < wpm=%d" rowId high wpm
 
+checkInitialHighEqWpm :: StatEntry -> [String]
+checkInitialHighEqWpm = checkPred1 p msgGen
+  where p (StatEntry rowId _ wpm high) = rowId /= 1 || wpm == high
+        msgGen (StatEntry rowId _ wpm high) =
+          printf "Row %d: high=%d does not match wpm=%d" rowId high wpm
+
 checkSequentialRowId :: StatEntry -> StatEntry -> [String]
 checkSequentialRowId = checkPred2 p msgGen
   where p (StatEntry rowId1 _ _ _) (StatEntry rowId2 _ _ _) =
@@ -85,7 +91,9 @@ checkContiguousEntries entry1 entry2 = checkSequentialRowId entry1 entry2
 
 validateStatEntries :: [StatEntry] -> [String]
 validateStatEntries [] = []
-validateStatEntries [entry] = checkHighGeWpm entry
-validateStatEntries (entry1:entry2:tl) = checkHighGeWpm entry1
+validateStatEntries [entry] = checkInitialHighEqWpm entry
+                           ++ checkHighGeWpm entry
+validateStatEntries (entry1:entry2:tl) = checkInitialHighEqWpm entry1
+                                      ++ checkHighGeWpm entry1
                                       ++ checkContiguousEntries entry1 entry2
                                       ++ validateStatEntries (entry2:tl)
