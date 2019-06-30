@@ -15,11 +15,7 @@ type Date = Day
 type Wpm = Integer
 type High = Integer
 
-data StatEntry = StatEntry { rowIdField :: RowId
-                           , dateField :: Date
-                           , wpmField :: Wpm
-                           , highField :: High
-                           }
+data StatEntry = StatEntry RowId Date Wpm High
 
 instance Show StatEntry where
   show (StatEntry rowId date wpm high) = intercalate "," $ [show rowId, show date, show wpm, show high]
