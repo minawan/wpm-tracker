@@ -1,6 +1,11 @@
 module Main where
 
 import Control.Monad (when)
+import qualified Data.ByteString.Lazy.Char8 as BC
+import Data.Csv ( defaultEncodeOptions
+                , encUseCrLf
+                , encodeDefaultOrderedByNameWith
+                )
 import Database.HDBC.Sqlite3 (connectSqlite3)
 import Database.HDBC
 import System.Environment
@@ -23,5 +28,8 @@ main = do
                Nothing -> []
   when (null rows) $ putStrLn ("No stat records found in " ++ dbFilename)
   mapM_ putStrLn $ validateStatEntries rows 
-  mapM_ (putStrLn . show) rows
+
+  let encodeOptions = defaultEncodeOptions { encUseCrLf = False }
+  BC.putStr $ encodeDefaultOrderedByNameWith encodeOptions rows
+
   disconnect conn

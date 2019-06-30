@@ -26,6 +26,9 @@ library:
   source-dirs: src
   dependencies:
   - HDBC >= 2.4 && < 3
+  - bytestring >= 0.10 && < 1
+  - cassava >= 0.5 && < 1
+  - text >= 1.2 && < 2
   - time >= 1.8 && < 2
 
 executables:
@@ -39,6 +42,8 @@ executables:
     dependencies:
     - HDBC >= 2.4 && < 3
     - HDBC-sqlite3 >= 2.3 && < 3
+    - bytestring >= 0.10 && < 1
+    - cassava >= 0.5 && < 1
     - wpm-tracker
 
 tests:

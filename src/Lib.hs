@@ -1,12 +1,31 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 module Lib
     ( StatEntry
     , readAllRows
     , validateStatEntries 
     ) where
 
+import qualified Data.ByteString.Char8 as BC (unpack)
+import Data.Csv ( DefaultOrdered
+                , FromNamedRecord
+                , ToNamedRecord
+                , FromField
+                , ToField
+                , header
+                , headerOrder
+                , namedRecord
+                , parseField
+                , parseNamedRecord
+                , toField
+                , toNamedRecord
+                , (.:)
+                , (.=)
+                )
 import Data.List (intercalate)
+import Data.Text (Text)
 import Data.Time.Calendar (Day)
-import Data.Time.Format (defaultTimeLocale, parseTimeM)
+import Data.Time.Format (defaultTimeLocale, parseTimeM, parseTimeOrError)
 import Database.HDBC (SqlValue, fromSql)
 import Text.Printf (printf)
 
@@ -15,11 +34,27 @@ type Date = Day
 type Wpm = Integer
 type High = Integer
 
+instance FromField Day where
+  parseField day =
+    return . parseTimeOrError True defaultTimeLocale "%Y-%m-%d" $ BC.unpack day
+
+instance ToField Day where
+  toField day = toField $ show day
+
 data StatEntry = StatEntry RowId Date Wpm High
 
-instance Show StatEntry where
-  show (StatEntry rowId date wpm high) =
-    intercalate "," $ [show rowId, show date, show wpm, show high]
+instance FromNamedRecord StatEntry where
+  parseNamedRecord entry = StatEntry <$> entry .: "oid"
+                                     <*> entry .: "date"
+                                     <*> entry .: "wpm"
+                                     <*> entry .: "high"
+
+instance ToNamedRecord StatEntry where
+  toNamedRecord (StatEntry rowId date wpm high) =
+    namedRecord ["oid" .= rowId, "date" .= date, "wpm" .= wpm, "high" .= high]
+
+instance DefaultOrdered StatEntry where
+  headerOrder _ = header ["oid", "date", "wpm", "high"]
 
 convRow :: [SqlValue] -> Maybe StatEntry
 convRow [sqlRowId, sqlDate, sqlWpm, sqlHigh] =
